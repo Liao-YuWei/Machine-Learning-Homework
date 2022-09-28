@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 def generateAb(file_path, n):
     data = open(file_path, 'r')
@@ -13,11 +13,14 @@ def generateAb(file_path, n):
     for row in range(len(A)):
         for col in range(n-1):
             A[row][col] = datapoints[row][0] ** (n - col - 1)
+
     b = np.zeros((len(datapoints), 1))
     for row in range(len(b)):
         b[row][0] = datapoints[row][1]
     
-    return A, b
+    datapoints = np.array(datapoints)
+    
+    return A, b, datapoints
 
 def transpose(A):
     num_row, num_col = A.shape
@@ -88,15 +91,36 @@ def printResult(X, error):
         print('%.3f' % X[i], end = '')
         if i != X.shape[0] - 1:
             print(' X^%d + ' % (X.shape[0] - 1 - i), end = '')
-    print('\nTotal Error: %.3f' % error)  
+    print('\nTotal Error: %.3f' % error)
 
+def drawPlot(fig, X, datapoints, num, method):
+    thisPlt = fig.add_subplot(2, 1, num)
+    thisPlt.scatter(datapoints[:, 0], datapoints[:, 1], c = 'r')
+    x_min = np.min(datapoints, axis=0)[0]
+    x_max = np.max(datapoints, axis=0)[0]
+    x_range = x_max - x_min
+    x_line = np.linspace(x_min - x_range * 0.1, x_max + x_range * 0.1, 50000)
+    y_line = np.zeros(len(x_line))
+
+    for i in range(len(x_line)):
+        for j in range(X.shape[0]):
+            y_line[i] += X[j] * (x_line[i] ** (X.shape[0] - 1 - j))
+    thisPlt.plot(x_line, y_line, c = 'k')
+
+    thisPlt.set_xlim(x_min - x_range * 0.1, x_max + x_range * 0.1)
+    thisPlt.set_title(method)
+
+"""
+Program starts here
+"""
 file_path = input('Please enter file path and names: ')
 n = int(input('Please enter the number of polynomial bases: '))
 lambda_ = float(input('Please enter lambda: '))
 
-A, b = generateAb(file_path, n)
-
+A, b, datapoints = generateAb(file_path, n)
 AT = transpose(A)
+
+fig = plt.figure()
 
 """
 LSE
@@ -111,6 +135,7 @@ error_LSE = calculateError(A, X_LSE, b)
 
 print('\nLSE:')
 printResult(X_LSE, error_LSE)
+drawPlot(fig, X_LSE, datapoints, 1, "LSE")
 
 """
 Newton's Method
@@ -124,6 +149,7 @@ error_Newton = calculateError(A, X_Newton, b)
 
 print("\nNewton's Method:")
 printResult(X_Newton, error_Newton)
+drawPlot(fig, X_Newton, datapoints, 2, "Newton's method")
 
-
-
+plt.subplots_adjust(hspace = 0.33)
+plt.show()
