@@ -21,17 +21,18 @@ def C(N, m):
 with open('testfile.txt', 'r') as file:
     i = 1
     for line in file:
-        testcase = list(map(int,line[:-1]))
+        line = line.replace('\n', '')
+        testcase = list(map(int,line))
 
         N = len(testcase)
         m = testcase.count(1)
         p = m / N
         likelihood = C(N, m) * (p ** m) * ((1-p) ** (N-m))
 
-        print(f'case {i}: {line}', end = '')
+        print(f'\ncase {i}: {line}')
         print(f'Likelihood: {likelihood}')
 
         print(f'Beta prior: a = {a} b = {b}')
         a += m
         b += (N-m) 
-        print(f'Beta posterior: a = {a} b = {b}', end = '\n\n')
+        print(f'Beta posterior: a = {a} b = {b}', end = '\n')
