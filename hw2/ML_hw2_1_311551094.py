@@ -150,7 +150,7 @@ def continuousMode():
             for col in range(num_col):
                 #give a small value if variance is 0 to prevent a 0 in log
                 if variance[num][row][col] == 0:
-                    variance[num][row][col] = 100000
+                    variance[num][row][col] = 1 / math.sqrt(2 * math.pi)        
     
     #calculate prior for training data
     prior /= num_train
@@ -194,13 +194,17 @@ TRAINING_LABEL_FILE = "train-labels.idx1-ubyte"
 TEST_IMAGE_FILE = "t10k-images.idx3-ubyte"
 TEST_LABEL_FILE = "t10k-labels.idx1-ubyte"
 
-mode = int(input('Discrete(0) or Continuous(1): '))
+original_stdout = sys.stdout
 
-if mode != 0 and mode != 1:
-    print('Wrong input!')
-    sys.exit()
+mode = int(input('Discrete(0) or Continuous(1): '))
 
 if mode == 0:
     discreteMode()
-else:
+elif mode == 1:
+    f = open('ContinuousResult.txt', 'w')
+    sys.stdout = f
     continuousMode()
+    f.close()
+    sys.stdout = original_stdout
+else:
+    print('Wrong input!')
