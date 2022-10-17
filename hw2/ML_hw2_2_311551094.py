@@ -36,3 +36,5 @@ with open('testfile.txt', 'r') as file:
         a += m
         b += (N-m) 
         print(f'Beta posterior: a = {a} b = {b}', end = '\n')
+
+        i += 1
