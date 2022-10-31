@@ -1,9 +1,3 @@
-Loading train-images.idx3-ubyte
-Loading train-labels.idx1-ubyte
-Loading t10k-images.idx3-ubyte
-Loading t10k-labels.idx1-ubyte
-Training... (1/2)
-Training... (2/2)
 Posterior (in log scale):
 0: 0.04949909447238023
 1: 0.17614009546960444
