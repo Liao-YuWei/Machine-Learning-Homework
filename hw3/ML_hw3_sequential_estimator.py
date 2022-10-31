@@ -1,14 +1,17 @@
 from operator import truth
 import numpy as np
 
+#Generate random data point using Irwin–Hall distribution
 def random_data_generator(m, s):
     n = s * 12
     original_mean = n / 2
     offset = m - original_mean
-    return sum(np.random.uniform(0, 1, n)) + offset 
+    original_random = sum(np.random.uniform(0, 1, n))   #A random data point ~N(n/2, s) where n = s * 12
+    return original_random + offset
 
-truth_mean = int(input('Enter the mean of gaussian for univariate gaussian data generator: '))
-truth_variance = int(input('Enter the variance of gaussian for univariate gaussian data generator: '))
+print('For univariate gaussian data generator, please enter following parameters')
+truth_mean = int(input('The mean: '))
+truth_variance = int(input('The variance: '))
 
 print(f'Data point source function: N({truth_mean}, {truth_variance})', end = '\n\n')
 
