@@ -5,7 +5,6 @@ from numpy import matmul as mul
 
 #Generate random data point using Irwin–Hall distribution
 def random_error_generator(s):
-    #return math.sqrt(s) * (sum(np.random.uniform(0, 1, 12)) - 6)
     n = s * 12
     original_mean = n / 2
     original_random = sum(np.random.uniform(0, 1, n))   #A random data point ~N(n/2, s) where n = s * 12
@@ -121,8 +120,10 @@ precision = int(input('\nEnter the precision for initial prior:'))
 a = 1 / error_variance
 design_matrix = np.zeros((1, basis_num))
 
+#store all random data points so for to variable x and y
 x = []
 y = []
+
 posterior_variance = np.zeros((basis_num, basis_num))
 for i in range(basis_num):
     posterior_variance[i][i] = 1 / precision
@@ -181,7 +182,8 @@ while True:
         y_50 = np.copy(y)
         posterior_mean_50 = np.copy(posterior_mean)
         posterior_variance_50 = np.copy(posterior_variance)
-        
+
+#plot result graph
 ground_truth_plot(w, error_variance, basis_num)
 predict_plot(222, 'Final Predict Result', x, y, posterior_mean, posterior_variance, basis_num)
 predict_plot(223, 'After 10 incomes', x_10, y_10, posterior_mean_10, posterior_variance_10, basis_num)
