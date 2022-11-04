@@ -65,7 +65,7 @@ def gradient_descent(design_matrix, y, n):
         if converge(weight, weight_pre):
             break
         weight_pre = np.copy(weight)
-    print(count)
+    #print(count)
     
     return weight
 
@@ -112,6 +112,51 @@ def print_result(weight, confusion):
     print(f'\nSensitivity (Successfully predict cluster 1): {sensitivity}')
     print(f'Specificity (Successfully predict cluster 2): {specificity}')
 
+def hessian_matrix(design_matrix, weight, n):
+    D = np.zeros((n, n))
+    for i in range(n):
+        wx= mul(design_matrix[i], weight)
+        D[i][i] = math.exp(-wx) / ((1 + math.exp(-wx)) ** 2)
+
+    At = transpose(design_matrix)
+    hessian = mul(mul(At, D), design_matrix)
+
+    return hessian
+
+def determinant(matrix):
+    result = 0
+    result += matrix[0][0] * matrix[1][1] * matrix[2][2]
+    result += matrix[0][1] * matrix[1][2] * matrix[2][0]
+    result += matrix[0][2] * matrix[1][0] * matrix[2][1]
+    result -= matrix[0][2] * matrix[1][1] * matrix[2][0]
+    result -= matrix[0][0] * matrix[1][2] * matrix[2][1]
+    result -= matrix[0][1] * matrix[1][0] * matrix[2][2]
+
+    return result
+
+def newtons_method(design_matrix, y, n):
+    weight_pre = np.zeros((3, 1))
+    weight = np.zeros((3, 1))
+    learning_rate = 0.05
+
+    count = 0
+    while True:
+        count += 1
+        grad = gradient(design_matrix, y, weight, n)
+        hessain = hessian_matrix(design_matrix, weight, n * 2)
+        
+        if determinant(hessain) != 0:
+            weight -= learning_rate * mul(inv(hessain), grad)
+        else:
+            weight -= learning_rate * grad
+
+        if converge(weight, weight_pre):
+            break
+        weight_pre = np.copy(weight)
+    #print(count)
+
+    return weight
+
 n = int(input('Number of data points: '))
 mx1 = float(input('mx1: ' ))
 vx1 = float(input('vx1: '))
@@ -134,9 +179,18 @@ for i in range(n):
 
 design_matrix, y = create_design_matrix_y(D1, D2)
 
+#gradient descent
 gradient_w = gradient_descent(design_matrix, y, n)
 gradient_prediction = test(gradient_w, design_matrix, n)
 gradient_confusion = confusion_matrix(y, gradient_prediction, n)
 
 print('Gradient descent:')
 print_result(gradient_w, gradient_confusion)
+
+#newton's method
+newtons_w = newtons_method(design_matrix, y, n)
+newtons_prediction = test(newtons_w, design_matrix, n)
+newtons_confusion = confusion_matrix(y, newtons_prediction, n)
+
+print("Newton's method:")
+print_result(newtons_w, newtons_confusion)
