@@ -113,6 +113,8 @@ def print_result(weight, confusion):
     print(f'\nSensitivity (Successfully predict cluster 1): {sensitivity}')
     print(f'Specificity (Successfully predict cluster 2): {specificity}')
 
+    return
+
 def hessian_matrix(design_matrix, weight, n):
     D = np.zeros((n, n))
     for i in range(n):
