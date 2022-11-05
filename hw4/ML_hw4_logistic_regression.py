@@ -1,8 +1,9 @@
-from os import cpu_count
 import numpy as np
 from numpy.linalg import inv
 from numpy import matmul as mul
 import math
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 #Generate random data point using Irwin–Hall distribution
 def random_error_generator(mean, var):
@@ -17,7 +18,7 @@ def random_error_generator(mean, var):
 def create_design_matrix_y(D1, D2):
     num_data = D1.shape[0]
     design_matrix = np.zeros((num_data * 2, 3))
-    y = np.zeros((num_data * 2, 1))
+    labels = np.zeros((num_data * 2, 1))
     for i in range(num_data):
         design_matrix[i][0] = 1
         design_matrix[i][1] = D1[i][0]
@@ -25,9 +26,9 @@ def create_design_matrix_y(D1, D2):
         design_matrix[i + num_data][0] = 1
         design_matrix[i + num_data][1] = D2[i][0]
         design_matrix[i + num_data][2] = D2[i][1]
-        y[i + num_data] = 1
+        labels[i + num_data] = 1
 
-    return design_matrix, y
+    return design_matrix, labels
 
 def transpose(A):
     num_row, num_col = A.shape
@@ -177,20 +178,38 @@ for i in range(n):
     D1 = np.vstack([D1, [cur_x1, cur_y1]])
     D2 = np.vstack([D2, [cur_x2, cur_y2]])
 
-design_matrix, y = create_design_matrix_y(D1, D2)
+design_matrix, labels = create_design_matrix_y(D1, D2)
 
 #gradient descent
-gradient_w = gradient_descent(design_matrix, y, n)
+gradient_w = gradient_descent(design_matrix, labels, n)
 gradient_prediction = test(gradient_w, design_matrix, n)
-gradient_confusion = confusion_matrix(y, gradient_prediction, n)
+gradient_confusion = confusion_matrix(labels, gradient_prediction, n)
 
 print('Gradient descent:')
 print_result(gradient_w, gradient_confusion)
 
 #newton's method
-newtons_w = newtons_method(design_matrix, y, n)
+newtons_w = newtons_method(design_matrix, labels, n)
 newtons_prediction = test(newtons_w, design_matrix, n)
-newtons_confusion = confusion_matrix(y, newtons_prediction, n)
+newtons_confusion = confusion_matrix(labels, newtons_prediction, n)
 
+print('------------------------')
 print("Newton's method:")
 print_result(newtons_w, newtons_confusion)
+
+whole_data = np.vstack((D1, D2))
+color = ['red','blue']
+
+cur_subplot = plt.subplot(131)
+cur_subplot.scatter(whole_data[:, 0], whole_data[:, 1], c=labels, cmap=colors.ListedColormap(color))
+cur_subplot.set_title('Ground Truth')
+
+cur_subplot = plt.subplot(132)
+cur_subplot.scatter(whole_data[:, 0], whole_data[:, 1], c=gradient_prediction, cmap=colors.ListedColormap(color))
+cur_subplot.set_title('Gradient descent')
+
+cur_subplot = plt.subplot(133)
+cur_subplot.scatter(whole_data[:, 0], whole_data[:, 1], c=newtons_prediction, cmap=colors.ListedColormap(color))
+cur_subplot.set_title("Newton's Method")
+
+plt.show()
