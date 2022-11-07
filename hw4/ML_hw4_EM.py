@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import trange
-import sys
+#import sys
 
 def readOneValue(file, length):
     return int.from_bytes(file.read(length), byteorder = 'big')
@@ -173,9 +173,9 @@ def print_confusion(confusion, num):
 
     return confusion[0][0]
 
-original_stdout = sys.stdout
-f = open('EM_result.txt', 'w')
-sys.stdout = f
+#original_stdout = sys.stdout
+#f = open('EM_result.txt', 'w')
+#sys.stdout = f
 
 FILE_PATH = "./data/"
 IMAGE_FILE = "train-images.idx3-ubyte"
@@ -223,4 +223,4 @@ error /= num_img
 print(f'\nTotal iteration to converge: {iteration}')
 print(f'Total error rate: {error}')
 
-sys.stdout = original_stdout
+#sys.stdout = original_stdout
