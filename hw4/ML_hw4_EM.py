@@ -58,23 +58,21 @@ def binning(imgs, num_img, num_row, num_col):
 
     return img_bin
 
-def E_step(_lamda, p, num_pixels):
-    w = np.zeros((10, 2, num_pixels))   #When value 0 or 1 is shown in the speific pixel, probability for num 0~9
-    indivisual_prob = np.zeros((10, 2, num_pixels)) #e.g., probability of num = 0 and value = 0 in pixel 0
+def E_step(imgs, _lamda, p, num_imgs, num_pixels):
+    w = np.zeros((num_img, 10)) #For every specific image, its probability to be cluster 0~9
 
-    for num in range(10):
-        num_chance = _lamda[num]
-        for value in range(2):
+    print('E step')
+    for img in trange(num_imgs):
+        for cluster in range(10):
+            w[img][cluster] = _lamda[cluster]
             for pixel in range(num_pixels):
-                indivisual_prob[num][value][pixel] = num_chance * (p[num][pixel] ** value) * ((1-p[num][pixel]) ** (1-value))
-    
-    for value in range(2):
-        for pixel in range(num_pixels):
-            marginal = sum(indivisual_prob[:, value, pixel])
-            if marginal == 0:
-                continue
-            for num in range(10):
-                w[num][value][pixel] = indivisual_prob[num][value][pixel] / marginal
+                if imgs[img][pixel] == 1:
+                    w[img][cluster] *= p[cluster][pixel]
+                else:
+                    w[img][cluster] *= (1 - p[cluster][pixel])
+        if sum(w[img]) == 0:
+            continue
+        w[img] /= sum(w[img])
     
     return w
 
@@ -83,30 +81,17 @@ def M_step(imgs, w):
     _lamda = np.zeros((10))
     p = np.zeros((10, num_row * num_col))
 
-    print('Updating lamda')
-    for num in trange(10):
-        sum = 0
-        for img in range(num_imgs):
-            for pixel in range(num_pixels):
-                value = imgs[img][pixel]
-                sum += w[num][value][pixel]
-        sum /= (num_imgs * num_pixels)
-        _lamda[num] = sum
-    #print(_lamda)
-
-    print('Updating probability to be 1 of every pixel in every label')
-    for num in trange(10):
+    print('M step')
+    for cluster in trange(10):
+        _lamda[cluster] = sum(w[:, cluster]) / num_imgs
         for pixel in range(num_pixels):
-            denominator = 0
-            numerator = 0
+            dot = 0
             for img in range(num_imgs):
-                value = imgs[img][pixel]
-                denominator += w[num][value][pixel]
-                if value == 1:
-                    numerator += w[num][1][pixel]
-            if denominator == 0:
+                if imgs[img][pixel] == 1:
+                    dot +=  w[img][cluster]
+            if _lamda[cluster] == 0:
                 continue
-            p[num][pixel] = numerator / denominator
+            p[cluster][pixel] = dot / (_lamda[cluster] * num_imgs)
 
     return _lamda, p
 
@@ -121,19 +106,19 @@ def print_imagination(p, mapping, num_row, num_col, labeled = False):
                 pixel = 1 if p[index][row * num_row + col] >= 0.5 else 0
                 print(pixel, end = ' ')
             print('')
-        print('\n')
+        print('')
     
     return
 
-def get_example_imgs(imgs, labels, num_pixels):
+"""def get_example_imgs(imgs, labels, num_pixels):
     example_imgs = np.zeros((10, num_pixels), dtype = int)
     for num in range(10):
         img_index = labels.index(num)
         example_imgs[num] = np.copy(imgs[img_index])
     
-    return example_imgs
+    return example_imgs"""
 
-def assign_label(p, example_imgs, num_pixels):
+"""def assign_label(p, example_imgs, num_pixels):
     mapping = np.zeros(10, dtype = int)
 
     for num in range(10):
@@ -143,37 +128,83 @@ def assign_label(p, example_imgs, num_pixels):
                 pred_value = 1 if p[num][pixel] >= 0.5 else 0
                 if pred_value == example_imgs[i][pixel]:
                     same_count[i] += 1
-        #print(same_count)
+        print(same_count)
         real_label = np.argmax(same_count)
         mapping[real_label] = num
     
-    return mapping
+    return mapping"""
 
-def test(imgs, p, _lamda, mapping, num_img, num_pixel):
+def assign_label_and_test(w, labels, num_imgs):
+    mapping = np.zeros((10), dtype = int)
+    counting = np.zeros((10, 10), dtype = int)
+    prediction = np.zeros((num_img), dtype = int)
+
+    #Cluster the images and count the relation between real label and each cluster
+    print('Clustering images')
+    for img in trange(num_imgs):
+        predict_cluster = np.argmax(w[img])
+        """probability = np.zeros(10)
+        for cluster in range(10):
+            probability[cluster] = _lamda[cluster]
+            for pixel in range(num_pixels):
+                if imgs[img][pixel] == 1:
+                    probability[cluster] *= p[cluster][pixel]
+                else:
+                    probability[cluster] *= (1 - p[cluster][pixel])
+        predict_cluster = np.argmax(probability)"""
+        counting[labels[img], predict_cluster] += 1
+        prediction[img] = predict_cluster
+    
+    #Use array mapping to store the corresponding cluster of the specific label
+    print('Finding the real label for each cluster')
+    for _ in trange(10):
+        index = np.argmax(counting)
+        real_label = index // 10
+        cur_cluster = index % 10
+        mapping[real_label] = cur_cluster
+        counting[real_label, :] = 0
+        counting[:, cur_cluster] = 0
+    
+    #Modify the prediction from cluster to real label
+    print('Mapping the real label for each image prediciton')
+    mapping_inv = np.zeros((10), dtype = int)
+    for i in range(10):
+        mapping_cluster = mapping[i]
+        mapping_inv[mapping_cluster] = i
+    for img in trange(num_imgs):
+        predict_cluster = prediction[img]
+        prediction[img] = mapping_inv[predict_cluster]
+
+    return mapping, prediction
+
+"""def test(imgs, p, _lamda, mapping, num_img, num_pixel):
     prediction = np.zeros((num_img), dtype = int)
 
     for img in range(num_img):
         probability = np.zeros(10)
-        for num in range(10):
+        for cluster in range(10):
+            probability[cluster] = _lamda[cluster]
             for pixel in range(num_pixel):
-                probability[num] *= _lamda[num] * (p[num][pixel] ** imgs[img][pixel]) * \
-                                    ((1-p[num][pixel]) ** (1-imgs[img][pixel]))
+                if imgs[img][pixel] == 1:
+                    probability[cluster] *= p[cluster][pixel]
+                else:
+                    probability[cluster] *= (1 - p[cluster][pixel])
         pred_cluster = np.argmax(probability)
         cur_prediction = np.where(mapping == pred_cluster)
         prediction[img] = cur_prediction
 
-    return prediction
+    return prediction"""
 
 def confusion_matrix(y, prediction, num, num_img):
     confusion = np.zeros((2, 2), dtype = int)
     for i in range(num_img):
         if y[i] == num:
-            if y[i] == prediction[i]:   #TP
+            if prediction[i] == num:    #TP
                 confusion[0][0] += 1
             else:                       #FN
                 confusion[0][1] += 1
         else:
-            if y[i] == prediction[i]:   #TN
+            if prediction[i] != num:    #TN
                 confusion[1][1] += 1
             else:                       #FP
                 confusion[1][0] += 1
@@ -182,19 +213,19 @@ def confusion_matrix(y, prediction, num, num_img):
 
 def print_confusion(confusion, num):
     print(f'\nConfusion Matrix {num}:')
-    print(f'\t\tPredict number {num}\tPredict not number {num}')
-    print(f'Is number {num}\t\t{confusion[0][0]}\t\t\t{confusion[0][1]}')
-    print(f"Isn't number {num}\t\t{confusion[1][0]}\t\t\t{confusion[1][1]}")
+    print(f'\t\t\t\tPredict number {num}\tPredict not number {num}')
+    print(f'Is number {num}\t\t\t\t{confusion[0][0]}\t\t\t{confusion[0][1]}')
+    print(f"Isn't number {num}\t\t\t{confusion[1][0]}\t\t\t{confusion[1][1]}")
 
     sensitivity = confusion[0][0] / (confusion[0][0] + confusion[0][1])
     specificity = confusion[1][1] / (confusion[1][0] + confusion[1][1])
-    print(f'\nSensitivity (Successfully predict cluster 1): {sensitivity}')
-    print(f'Specificity (Successfully predict cluster 2): {specificity}')
+    print(f'\nSensitivity (Successfully predict number {num}): {sensitivity}')
+    print(f'Specificity (Successfully predict not number {num}): {specificity}')
 
     return confusion[0][0]
 
 original_stdout = sys.stdout
-f = open('EM_result.txt', 'w')
+f = open('EM_result_confusion_2.txt', 'w')
 sys.stdout = f
 
 FILE_PATH = "./data/"
@@ -215,7 +246,7 @@ mapping = np.arange(10)
 iteration = 1
 
 while iteration < MAX_ITERATION:
-    w = E_step(_lamda, p, num_row * num_col)
+    w = E_step(imgs, _lamda, p, num_img, num_row * num_col)
     _lamda, p = M_step(imgs, w)
 
     print_imagination(p, mapping, num_row, num_col)
@@ -230,14 +261,14 @@ while iteration < MAX_ITERATION:
     iteration += 1
     p_pre = np.copy(p)
 
-example_imgs = get_example_imgs(imgs, labels, num_row * num_col)
-mapping = assign_label(p, example_imgs, num_row * num_col)
-#print(mapping)
+#example_imgs = get_example_imgs(imgs, labels, num_row * num_col)
+#mapping = assign_label(p, example_imgs, num_row * num_col)
+mapping, prediction = assign_label_and_test(w, labels, num_img)
 print_imagination(p, mapping, num_row, num_col, True)
 
 error = num_img
 for num in range(10):
-    prediction = test(imgs, p, _lamda, mapping, num_img, num_row * num_col)
+    #prediction = test(imgs, p, _lamda, mapping, num_img, num_row * num_col)
     confusion = confusion_matrix(labels, prediction, num, num_img)
     num_correct = print_confusion(confusion, num)
     error -= num_correct
