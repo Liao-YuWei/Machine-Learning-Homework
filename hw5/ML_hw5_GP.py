@@ -15,6 +15,7 @@ def loadData(filepath):
             X[line_num] = x
             Y[line_num] = y
             line_num += 1
+    f.close()
     
     return X, Y
 
