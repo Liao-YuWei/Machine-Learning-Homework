@@ -4,7 +4,7 @@ from numpy.linalg import inv
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 
-def loadData(filepath):
+def load_data(filepath):
     X = np.zeros((34))
     Y = np.zeros((34))
     line_num = 0
@@ -87,7 +87,8 @@ LENGTHSCALE = 1
 KERNEL_VARIANCE = 1
 PREDICT_SAMPLE_SIZE = 1000
 
-X, Y = loadData("./data/input.data")
+X, Y = load_data("./data/input.data")
+
 #Gaussian Process
 covariance_matrix = create_covariance_matrix(X, BETA, ALPHA, LENGTHSCALE, KERNEL_VARIANCE)
 mean , variance = GP_predict(X, Y, covariance_matrix, BETA, PREDICT_SAMPLE_SIZE, ALPHA, LENGTHSCALE, KERNEL_VARIANCE)
