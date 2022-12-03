@@ -37,9 +37,7 @@ def GP_predict(X, Y, covariance_matrix, beta, predict_sample_size, alpha, length
     num_data = X.shape[0]
     mean = np.zeros(predict_sample_size)
     variance = np.zeros(predict_sample_size)
-    x_sample_min = np.min(X) - abs(np.min(X)) * 0.2
-    x_sample_max = np.max(X) + abs(np.max(X)) * 0.2
-    x_sample = np.linspace(x_sample_min, x_sample_max, predict_sample_size)
+    x_sample = np.linspace(-60, 60, predict_sample_size)
 
     for sample in range(predict_sample_size):
         kernel = np.zeros((num_data, 1))
@@ -52,9 +50,7 @@ def GP_predict(X, Y, covariance_matrix, beta, predict_sample_size, alpha, length
     return mean, variance
 
 def GP_plot(X, Y, mean, variance, predict_sample_size):
-    x_sample_min = np.min(X) - abs(np.min(X)) * 0.2
-    x_sample_max = np.max(X) + abs(np.max(X)) * 0.2
-    x_sample = np.linspace(x_sample_min, x_sample_max, predict_sample_size)
+    x_sample = np.linspace(-60, 60, predict_sample_size)
     interval = 1.96 * (variance ** 0.5)
 
     plt.scatter(X, Y, color = 'k')
