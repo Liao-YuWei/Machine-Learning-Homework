@@ -71,6 +71,7 @@ def grid_search(X_train, Y_train, kernel_type):
                         option = f'-s 0 -t {kernel_type} -c {c} -d {d} -g {g} -r {r} -q -v 3'
                         print(option)
                         optimal_option, optimal_accuarcy = get_best_option(X_train, Y_train, option, optimal_option, optimal_accuarcy)
+    
     elif kernel_type == 2:  #RBF
         gamma = [0.0001, 1/784, 0.01, 0.1, 1, 10]
 
@@ -80,6 +81,7 @@ def grid_search(X_train, Y_train, kernel_type):
                 option = f'-s 0 -t {kernel_type} -c {c} -g {g} -q -v 3'
                 print(option)
                 optimal_option, optimal_accuarcy = get_best_option(X_train, Y_train, option, optimal_option, optimal_accuarcy)
+    
     elif kernel_type == 3:  #sigmoid
         gamma = [0.0001, 1/784, 0.01, 0.1, 1, 10]
         coefficient = [-10, -5, 0, 5, 10]
@@ -128,7 +130,7 @@ elif part == 2:
         sys.stdout = original_stdout # Reset the standard output to its original value
 elif part == 3:
     train_kernel = linear_kernel(X_train, X_train) + RBFkernel(X_train, X_train)
-    test_kernel = linear_kernel(X_train, X_test) + RBFkernel(X_test, X_test)
+    test_kernel = linear_kernel(X_test, X_train) + RBFkernel(X_test, X_train)
 
     # Add index in front of kernel
     train_kernel = np.hstack((np.arange(1,train_num + 1).reshape(-1, 1), train_kernel))
