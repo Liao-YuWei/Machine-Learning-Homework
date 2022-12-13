@@ -33,11 +33,36 @@ def kernel(img):
     
     return img_kernel
 
+def init_center(img_kernel):
+    if MODE == 'random':
+        centers = np.random.randint(IMAGE_SIZE, size=NUM_CLUSTER)
+    elif MODE == 'k-means++':
+        centers = np.zeros(NUM_CLUSTER, dtype=int)
+        centers[0] = np.random.randint(IMAGE_SIZE, size=1)
+        for i in range(1, NUM_CLUSTER):
+            distances = np.zeros(IMAGE_SIZE)
+            for j in range(IMAGE_SIZE):
+                min_dist = np.Inf
+                for k in range(i):
+                    temp_dist = img_kernel[centers[k]][j]
+                    if temp_dist < min_dist:
+                        min_dist = temp_dist
+                distances[j] = min_dist
+            distances = distances / np.sum(distances)
+            centers[i] = np.random.choice(10000, size=1, p=distances)
+    else:
+        print('Wrong input for cluster initialization!')
+
+    return centers
+
 IMAGE_SIZE = 10000
 GAMMA_S = 1 / IMAGE_SIZE
 GAMMA_C = 1 / (256 ** 3)
-K = 2
+NUM_CLUSTER = 5
+MODE = 'k-means++'
 
 img = np.asarray(Image.open('.\data\image1.png').getdata()) #load image to 10000*3 numpy array
 
 img_kernel = kernel(img)
+init_mean = init_center(img_kernel)
+print(init_mean)
