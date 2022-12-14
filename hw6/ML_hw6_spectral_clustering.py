@@ -162,24 +162,33 @@ def kmeans(U):
     return clusters
 
 def draw_eigenspace(U, clusters):
-    points = []
-    for _ in range(NUM_CLUSTER):
-            points.append([])
-
+    points_x, points_y, points_z = [], [], []
+    
     if NUM_CLUSTER == 2:
+        for _ in range(NUM_CLUSTER):
+            points_x.append([])
+            points_y.append([])
         for pixel in range(IMAGE_SIZE):
-            points[clusters[pixel]].append(U[pixel])
+            points_x[clusters[pixel]].append(U[pixel][0])
+            points_y[clusters[pixel]].append(U[pixel][1])
         
         for cluster in range(NUM_CLUSTER):
-            plt.scatter(points[cluster][:][1], points[cluster][:][2], c=EIGENSPACE_COLOR)
+            plt.scatter(points_x[cluster], points_y[cluster], c=EIGENSPACE_COLOR[0])
         plt.savefig(f'{OUTPUT_DIR}\eigenspace_{NUM_CLUSTER}.png')
     elif NUM_CLUSTER == 3:
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
+        for _ in range(NUM_CLUSTER):
+            points_x.append([])
+            points_y.append([])
+            points_z.append([])
         for pixel in range(IMAGE_SIZE):
-            points[clusters[pixel]].append(U[pixel])
+            points_x[clusters[pixel]].append(U[pixel][0])
+            points_y[clusters[pixel]].append(U[pixel][1])
+            points_z[clusters[pixel]].append(U[pixel][2])
+
         for cluster in range(NUM_CLUSTER):
-            ax.scatter(points[cluster][:][1], points[cluster][:][2], points[cluster][:][3], c=EIGENSPACE_COLOR)
+            ax.scatter(points_x[cluster], points_y[cluster], points_z[cluster], c=EIGENSPACE_COLOR[1])
         fig.savefig(f'{OUTPUT_DIR}\eigenspace_{NUM_CLUSTER}.png')
     plt.show()
     
@@ -187,7 +196,7 @@ def draw_eigenspace(U, clusters):
 
 IMAGE_SIZE = 10000
 COLOR = np.array([[56, 207, 0], [64, 70, 230], [186, 7, 61], [245, 179, 66], [55, 240, 240]])
-EIGENSPACE_COLOR = ['c', 'm', 'grey']
+EIGENSPACE_COLOR = [['c', 'm'], ['c', 'm', 'grey']]
 
 IMAGE_ID = 1
 GAMMA_S = 0.0001
