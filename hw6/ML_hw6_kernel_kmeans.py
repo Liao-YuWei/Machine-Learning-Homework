@@ -146,7 +146,7 @@ GAMMA_C = 0.001
 NUM_CLUSTER = 4
 MODE = 'random'
 IMAGE_PATH = f'.\data\image{IMAGE_ID}.png'
-OUTPUT_DIR = f'.\output\kmeans\{MODE}\image{IMAGE_ID}'
+OUTPUT_DIR = f'.\output\kernel_kmeans\{MODE}\image{IMAGE_ID}'
 
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
