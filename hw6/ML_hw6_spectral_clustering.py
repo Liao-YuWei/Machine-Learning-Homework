@@ -173,7 +173,7 @@ def draw_eigenspace(U, clusters):
             points_y[clusters[pixel]].append(U[pixel][1])
         
         for cluster in range(NUM_CLUSTER):
-            plt.scatter(points_x[cluster], points_y[cluster], c=EIGENSPACE_COLOR[0])
+            plt.scatter(points_x[cluster], points_y[cluster], c=EIGENSPACE_COLOR[cluster])
         plt.savefig(f'{OUTPUT_DIR}\eigenspace_{NUM_CLUSTER}.png')
     elif NUM_CLUSTER == 3:
         fig = plt.figure()
@@ -188,7 +188,7 @@ def draw_eigenspace(U, clusters):
             points_z[clusters[pixel]].append(U[pixel][2])
 
         for cluster in range(NUM_CLUSTER):
-            ax.scatter(points_x[cluster], points_y[cluster], points_z[cluster], c=EIGENSPACE_COLOR[1])
+            ax.scatter(points_x[cluster], points_y[cluster], points_z[cluster], c=EIGENSPACE_COLOR[cluster])
         fig.savefig(f'{OUTPUT_DIR}\eigenspace_{NUM_CLUSTER}.png')
     plt.show()
     
@@ -196,13 +196,13 @@ def draw_eigenspace(U, clusters):
 
 IMAGE_SIZE = 10000
 COLOR = np.array([[56, 207, 0], [64, 70, 230], [186, 7, 61], [245, 179, 66], [55, 240, 240]])
-EIGENSPACE_COLOR = [['c', 'm'], ['c', 'm', 'grey']]
+EIGENSPACE_COLOR = ['c', 'm', 'grey']
 
 IMAGE_ID = 1
 GAMMA_S = 0.0001
 GAMMA_C = 0.001
 NUM_CLUSTER = 2
-MODE = 'ratio'
+MODE = 'normalized'
 INIT_METHOD = 'random'
 IMAGE_PATH = f'.\data\image{IMAGE_ID}.png'
 OUTPUT_DIR = f'.\output\spectral_clustering\{MODE}\{INIT_METHOD}\image{IMAGE_ID}'
