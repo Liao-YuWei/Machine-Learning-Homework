@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 import os
 from scipy.spatial.distance import cdist
+from matplotlib import pyplot as plt
 
 def kernel(img):
     color_dist = cdist(img, img, 'sqeuclidean')
@@ -27,7 +28,7 @@ def compute_laplacian(W):
 
 def normalize_laplacian(L, D):
     sqrt_D = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
-    for i in range(100):
+    for i in range(IMAGE_SIZE):
         sqrt_D[i][i] = D[i][i] ** (-0.5)
     L_n = sqrt_D @ L @ sqrt_D
 
@@ -41,13 +42,13 @@ def normalize_laplacian(L, D):
 
 #     return T
 
-def normalize_row(U):
-    T = np.copy(U)
-    row_sum = np.sum(T, axis=1)
-    for row in range(100):
-        T[row, :] /= row_sum[row]
+# def normalize_row(U):
+#     T = np.copy(U)
+#     row_sum = np.sum(T, axis=1)
+#     for row in range(IMAGE_SIZE):
+#         T[row, :] /= row_sum[row]
             
-    return T
+#     return T
 
 def eigen_decomposition(L):
     eigenvalues, eigenvectors = np.linalg.eig(L)
@@ -161,21 +162,41 @@ def kmeans(U):
     return clusters
 
 def draw_eigenspace(U, clusters):
-    
+    points = []
+    for _ in range(NUM_CLUSTER):
+            points.append([])
 
+    if NUM_CLUSTER == 2:
+        for pixel in range(IMAGE_SIZE):
+            points[clusters[pixel]].append(U[pixel])
+        
+        for cluster in range(NUM_CLUSTER):
+            plt.scatter(points[cluster][:][1], points[cluster][:][2], c=EIGENSPACE_COLOR)
+        plt.savefig(f'{OUTPUT_DIR}\eigenspace_{NUM_CLUSTER}.png')
+    elif NUM_CLUSTER == 3:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        for pixel in range(IMAGE_SIZE):
+            points[clusters[pixel]].append(U[pixel])
+        for cluster in range(NUM_CLUSTER):
+            ax.scatter(points[cluster][:][1], points[cluster][:][2], points[cluster][:][3], c=EIGENSPACE_COLOR)
+        fig.savefig(f'{OUTPUT_DIR}\eigenspace_{NUM_CLUSTER}.png')
+    plt.show()
+    
     return
 
 IMAGE_SIZE = 10000
 COLOR = np.array([[56, 207, 0], [64, 70, 230], [186, 7, 61], [245, 179, 66], [55, 240, 240]])
+EIGENSPACE_COLOR = ['c', 'm', 'grey']
 
 IMAGE_ID = 1
 GAMMA_S = 0.0001
 GAMMA_C = 0.001
-NUM_CLUSTER = 4
-MODE = 'normalized'
+NUM_CLUSTER = 2
+MODE = 'ratio'
 INIT_METHOD = 'random'
 IMAGE_PATH = f'.\data\image{IMAGE_ID}.png'
-OUTPUT_DIR = f'.\output\spectral_clustering\{MODE}\image{IMAGE_ID}'
+OUTPUT_DIR = f'.\output\spectral_clustering\{MODE}\{INIT_METHOD}\image{IMAGE_ID}'
 
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
@@ -196,11 +217,11 @@ elif MODE == 'normalized':
     L, D = compute_laplacian(W)
     L_normal, sqrt_D = normalize_laplacian(L, D)
     U = eigen_decomposition(L_normal)
-    T = normalize_row(U)
-    # T = U @ sqrt_D
+    # T = normalize_row(U)
+    T = sqrt_D @ U
     clusters = kmeans(T)
 
     if NUM_CLUSTER <= 3:
-        draw_eigenspace(U, clusters)
+        draw_eigenspace(T, clusters)
 else:
     print('Wrong mode input!')
