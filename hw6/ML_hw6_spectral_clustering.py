@@ -25,6 +25,14 @@ def compute_laplacian(W):
 
     return L, D
 
+def normalize_laplacian(L, D):
+    sqrt_D = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
+    for i in range(100):
+        sqrt_D[i][i] = D[i][i] ** (-0.5)
+    L_n = sqrt_D @ L @ sqrt_D
+
+    return L_n
+
 def eigen_decomposition(L):
     eigenvalues, eigenvectors = np.linalg.eig(L)
     index = np.argsort(eigenvalues)
@@ -72,8 +80,8 @@ def init_kmeans(U):
     else:
         print('Wrong input for cluster initialization!')
 
-    return means, clusters
-
+    # return means, clusters
+    return centers, clusters
 
 def E_step(U, means):
     new_clusters = np.zeros(IMAGE_SIZE, dtype=int)
@@ -123,17 +131,17 @@ def kmeans(U):
     iteration = 1
     means, clusters = init_kmeans(U)
 
-    while not converge:
-        print(f'iteration: {iteration}')
-        pre_clusters = clusters
+    # while not converge:
+    #     print(f'iteration: {iteration}')
+    #     pre_clusters = clusters
 
-        clusters = E_step(U, means)
-        means = M_step(U, clusters)
+    #     clusters = E_step(U, means)
+    #     means = M_step(U, clusters)
 
-        save_picture(clusters, iteration)
-        converge = check_converge(clusters, pre_clusters)
+    #     save_picture(clusters, iteration)
+    #     converge = check_converge(clusters, pre_clusters)
     
-        iteration += 1
+    #     iteration += 1
 
     return means, clusters
 
@@ -154,7 +162,15 @@ if not os.path.exists(OUTPUT_DIR):
 print(f'Image: {IMAGE_ID}, k: {NUM_CLUSTER}, mode: {MODE}')
 img = np.asarray(Image.open(IMAGE_PATH).getdata()) #load image to 10000*3 numpy array
 
-W = kernel(img)
-L, D = compute_laplacian(W)
-U = eigen_decomposition(L)
-kmeans(U)
+if MODE == 'ratio':
+    W = kernel(img)
+    L, D = compute_laplacian(W)
+    U = eigen_decomposition(L)
+    kmeans(U)
+elif MODE == 'normalized':
+    W = kernel(img)
+    L, D = compute_laplacian(W)
+    L_nomal = normalize_laplacian(L, D)
+
+else:
+    print('Wrong mode input!')
