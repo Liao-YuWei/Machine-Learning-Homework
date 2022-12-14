@@ -137,20 +137,6 @@ def save_picture(clusters, iteration):
 
     return
 
-def png_to_gif():
-    frames = []
-    imgs = glob.glob((os.path.join(OUTPUT_DIR, "*.png")))
-    for i in imgs:
-        new_frame = Image.open(i)
-        frames.append(new_frame)
-    
-    # Save into a GIF file that loops forever
-    frames[0].save(OUTPUT_DIR + f'\{NUM_CLUSTER}_image{IMAGE_ID}.gif', format='GIF',
-                append_images=frames[1:],
-                save_all=True,
-                duration=300, loop=0)
-    
-
 IMAGE_SIZE = 10000
 COLOR = np.array([[56, 207, 0], [64, 70, 230], [186, 7, 61], [245, 179, 66], [55, 240, 240]])
 
@@ -184,5 +170,3 @@ while not converge:
     converge = check_converge(clusters, pre_clusters)
     
     iteration += 1
-
-png_to_gif()
