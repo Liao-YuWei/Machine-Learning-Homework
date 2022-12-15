@@ -3,24 +3,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm, trange
 import os
-import glob
 from scipy.spatial.distance import cdist
-
-def spatial_rbf(gamma, x1, x2):
-    x1_row = x1 // 100
-    x1_col = x1 % 100
-    x2_row = x2 // 100
-    x2_col = x2 % 100
-    square = (x1_row - x2_row) ** 2 + (x1_col - x2_col) ** 2
-
-    return math.exp(-gamma * square)
-
-def color_rbf(gamma, x1, x2):
-    square = 0
-    for i in range(3):
-        square += (x1[i] - x2[i]) ** 2
-    
-    return math.exp(-gamma * square)
 
 def kernel(img):
     color_dist = cdist(img, img, 'sqeuclidean')
