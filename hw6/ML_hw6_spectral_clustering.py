@@ -34,22 +34,6 @@ def normalize_laplacian(L, D):
 
     return L_n, sqrt_D
 
-# def normalize_row(U, D):
-#     sqrt_D = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
-#     for i in range(100):
-#         sqrt_D[i][i] = D[i][i] ** (-0.5)
-#     T = sqrt_D @ U
-
-#     return T
-
-# def normalize_row(U):
-#     T = np.copy(U)
-#     row_sum = np.sum(T, axis=1)
-#     for row in range(IMAGE_SIZE):
-#         T[row, :] /= row_sum[row]
-            
-#     return T
-
 def eigen_decomposition(L):
     eigenvalues, eigenvectors = np.linalg.eig(L)
     index = np.argsort(eigenvalues)
@@ -108,8 +92,6 @@ def E_step(U, means):
             if temp_dist < min_dist:
                 min_dist = temp_dist
                 new_clusters[pixel] = cluster
-
-    # save_picture(clusters, 0)
 
     return new_clusters
 
@@ -226,7 +208,6 @@ elif MODE == 'normalized':
     L, D = compute_laplacian(W)
     L_normal, sqrt_D = normalize_laplacian(L, D)
     U = eigen_decomposition(L_normal)
-    # T = normalize_row(U)
     T = sqrt_D @ U
     clusters = kmeans(T)
 
