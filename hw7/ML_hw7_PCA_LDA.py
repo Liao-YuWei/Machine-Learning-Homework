@@ -40,7 +40,7 @@ def PCA(data):
     mean = np.mean(data, axis = 0)
     data_center = data - mean
 
-    covariance = data_center @ data_center.T
+    covariance = data_center @ data_center.T / data_center.shape[0]
     eigenvalue, eigenvector = np.linalg.eigh(covariance)
     eigenvector = data_center.T @ eigenvector
     
@@ -53,8 +53,13 @@ def PCA(data):
 
     return W
 
+# def LDA(data):
+#     for subject in range(15):
+
+#     return
+
 def print_eigen_fisher_face(W, face):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(5, 5))
     for i in range(25):
         img = W[:, i].reshape(231, 195)
         ax = fig.add_subplot(5, 5, i+1)
@@ -65,12 +70,56 @@ def print_eigen_fisher_face(W, face):
         
     return
 
+def reconstruct_face(W, data):
+    id = np.random.choice(135, 10, replace=False)
+    fig = plt.figure(figsize=(8, 2))
+    for i in range(10):
+        img = data[id[i]].reshape(231, 195)
+        ax = fig.add_subplot(2, 10, i + 1)
+        ax.axis('off')
+        ax.imshow(img, cmap='gray')
+
+        x = img.reshape(1, -1)
+        reconstruct_img = x @ W @ W.T
+        reconstruct_img = reconstruct_img.reshape(231, 195)
+        ax = fig.add_subplot(2, 10, i + 11)
+        ax.axis('off')
+        ax.imshow(reconstruct_img, cmap='gray')
+    fig.savefig(f'./output/reconstruct.jpg')
+    plt.show()
+
+    return
+
+def predict(train_img, train_label, test_img, test_label, W):
+    k = 5
+    error = 0
+
+    xW_train = train_img @ W
+    xW_test = test_img @ W
+    for test in range(30):
+        distance = np.zeros(135)
+        for train in range(135):
+            distance[train] = np.sum((xW_test[test] - xW_train[train]) ** 2)
+        neighbors = np.argsort(distance)[:k]
+        prediction = np.argmax(np.bincount(train_label[neighbors]))
+        if test_label[test] != prediction:
+            error += 1
+
+    print(f'error rate: {error / 30 * 100}%')
+    return
+
 TRAINING_PATH = './Yale_Face_Database/Training'
 TESTING_PATH = './Yale_Face_Database/Testing'
+
+mode = int(input('Please select a mode (1~4): '))
 
 train_img, train_filename, train_label = load_imgs(TRAINING_PATH)
 test_img, test_filename, test_label = load_imgs(TESTING_PATH)
 
-W = PCA(train_img)
-print_eigen_fisher_face(W, 'eigenface')
-# reconstruct_face(W)
+if mode == 1:
+    W = PCA(train_img)
+    print_eigen_fisher_face(W, 'eigenface')
+    reconstruct_face(W, train_img)
+    predict(train_img, train_label, test_img, test_label, W)
+elif mode == 2:
+    W = LDA(train_img)
