@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from matplotlib import pyplot as plt
+from tqdm import trange
 
 def read_pmg(path):
     with open(path, 'rb') as f:
@@ -53,10 +54,31 @@ def PCA(data):
 
     return W
 
-# def LDA(data):
-#     for subject in range(15):
+def LDA(data, label):
+    dimension = data.shape[1]
+    S_w = np.zeros((dimension, dimension))
+    S_b = np.zeros((dimension, dimension))
+    m = np.mean(data, axis = 0)
+    for subject in trange(1, 16):
+        id = np.where(label == subject)
+        scatter = data[id]
+        mj = np.mean(scatter, axis = 0)
+        within_diff = scatter - mj
+        S_w += within_diff.T @ within_diff
+        between_diff = mj - m
+        S_b += len(id) * between_diff.T @ between_diff
+    
+    S_w_S_b = np.linalg.pinv(S_w) @ S_b
+    eigenvalue, eigenvector = np.linalg.eig(S_w_S_b)
 
-#     return
+    index = np.argsort(-eigenvalue)
+    eigenvector = eigenvector[:, index]
+
+    W = eigenvector[:, :25].real
+    for i in range(W.shape[1]):
+        W[:, i] = W[:, i] / np.linalg.norm(W[:, i])
+
+    return W
 
 def print_eigen_fisher_face(W, face):
     fig = plt.figure(figsize=(5, 5))
@@ -122,4 +144,4 @@ if mode == 1:
     reconstruct_face(W, train_img)
     predict(train_img, train_label, test_img, test_label, W)
 elif mode == 2:
-    W = LDA(train_img)
+    W = LDA(train_img, train_label)
