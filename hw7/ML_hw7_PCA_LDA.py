@@ -31,6 +31,21 @@ def load_imgs(path):
 
     return np.array(image), np.array(filename), np.array(label)
 
+def resize_img(data):
+    num_imgs = data.shape[0]
+    img_compress = np.zeros((num_imgs, 77 * 65))
+
+    for img in range(num_imgs):
+        for row in range(77):
+            for col in range(65):
+                tmp = 0
+                for i in range(3):
+                    for j in range(3):
+                        tmp += train_img[img][(row*3 + i) * 195 + (col*3 + j)]
+                img_compress[img][row * 65 + col] = tmp // 9
+
+    return img_compress
+
 # def standardize(data):
 #     mean = np.mean(data, axis = 0)
 #     std = np.std(data, axis = 0)
@@ -80,10 +95,10 @@ def LDA(data, label):
 
     return W
 
-def print_eigen_fisher_face(W, face):
+def print_eigen_fisher_face(W, face, scale):
     fig = plt.figure(figsize=(5, 5))
     for i in range(25):
-        img = W[:, i].reshape(231, 195)
+        img = W[:, i].reshape(231 // scale, 195 // scale)
         ax = fig.add_subplot(5, 5, i+1)
         ax.axis('off')
         ax.imshow(img, cmap='gray')
@@ -92,18 +107,18 @@ def print_eigen_fisher_face(W, face):
         
     return
 
-def reconstruct_face(W, data):
+def reconstruct_face(W, data, scale):
     id = np.random.choice(135, 10, replace=False)
     fig = plt.figure(figsize=(8, 2))
     for i in range(10):
-        img = data[id[i]].reshape(231, 195)
+        img = data[id[i]].reshape(231 // scale, 195 // scale)
         ax = fig.add_subplot(2, 10, i + 1)
         ax.axis('off')
         ax.imshow(img, cmap='gray')
 
         x = img.reshape(1, -1)
         reconstruct_img = x @ W @ W.T
-        reconstruct_img = reconstruct_img.reshape(231, 195)
+        reconstruct_img = reconstruct_img.reshape(231 // scale, 195 // scale)
         ax = fig.add_subplot(2, 10, i + 11)
         ax.axis('off')
         ax.imshow(reconstruct_img, cmap='gray')
@@ -140,8 +155,13 @@ test_img, test_filename, test_label = load_imgs(TESTING_PATH)
 
 if mode == 1:
     W = PCA(train_img)
-    print_eigen_fisher_face(W, 'eigenface')
-    reconstruct_face(W, train_img)
+    print_eigen_fisher_face(W, 'eigenface', 1)
+    reconstruct_face(W, train_img, 1)
     predict(train_img, train_label, test_img, test_label, W)
 elif mode == 2:
-    W = LDA(train_img, train_label)
+    train_img_compress = resize_img(train_img) #77 * 65
+    test_img_compress = resize_img(test_img)
+    W = LDA(train_img_compress, train_label)
+    print_eigen_fisher_face(W, 'fisherface', 3)
+    reconstruct_face(W, train_img_compress, 3)
+    predict(train_img_compress, train_label, test_img_compress, test_label, W)
