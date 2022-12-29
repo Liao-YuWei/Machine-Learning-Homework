@@ -127,8 +127,6 @@ def RBFkernel(u, v):
     return np.exp(-gamma * dist)
 
 def kernelPCA(data, kernel_type):
-    one = np.ones((135, 135)) / 135
-
     if kernel_type == 'rbf':
         kernel = RBFkernel(data, data)
     elif kernel_type == 'linear':
@@ -136,11 +134,35 @@ def kernelPCA(data, kernel_type):
     else:
         print('False kernel type input!')
     
-    #kernel = kernel - one @ kernel - kernel @ one + one @ kernel @ one
     eigenvalue, eigenvector = np.linalg.eigh(kernel)
     
     index = np.argsort(-eigenvalue)
     eigenvector = eigenvector[:, index]
+
+    W = eigenvector[:, :25]
+    for i in range(W.shape[1]):
+        W[:, i] = W[:, i] / np.linalg.norm(W[:, i])
+
+    return W, kernel
+
+def kernelLDA(data, kernel_type):
+    Z = np.ones((data.shape[0], data.shape[0])) / 9
+
+    if kernel_type == 'rbf':
+        kernel = RBFkernel(data, data)
+    elif kernel_type == 'linear':
+        kernel = linear_kernel(data, data)
+    else:
+        print('False kernel type input!')
+
+    S_w = kernel @ kernel
+    S_b = kernel @ Z @ kernel
+    
+    S_w_S_b = np.linalg.pinv(S_w) @ S_b
+    eigenvalue, eigenvector = np.linalg.eig(S_w_S_b)
+    
+    index = np.argsort(-eigenvalue)
+    eigenvector = eigenvector[:, index].real
 
     W = eigenvector[:, :25]
     for i in range(W.shape[1]):
@@ -196,6 +218,7 @@ def predict(train_img, train_label, test_img, test_label, W):
             error += 1
 
     print(f'error rate: {error / 30 * 100}%')
+
     return
 
 def predict_kernel(train_img, train_label, test_img, test_label, W, train_kernel, kernel_type):
@@ -252,4 +275,11 @@ elif mode == 3: #kernel PCA
     centered_train = train_img_compress - mean
     centered_test = test_img_compress - mean
     W, train_kernel = kernelPCA(centered_train, kernel_type)
+    predict_kernel(centered_train, train_label, centered_test, test_label, W, train_kernel, kernel_type)
+elif mode == 4: #kernel LDA
+    kernel_type = 'linear'
+    mean = np.mean(train_img_compress, axis=0)
+    centered_train = train_img_compress - mean
+    centered_test = test_img_compress - mean
+    W, train_kernel = kernelLDA(centered_train, kernel_type)
     predict_kernel(centered_train, train_label, centered_test, test_label, W, train_kernel, kernel_type)
