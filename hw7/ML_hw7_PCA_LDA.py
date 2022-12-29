@@ -41,7 +41,7 @@ def resize_img(data):
                 tmp = 0
                 for i in range(3):
                     for j in range(3):
-                        tmp += train_img[img][(row*3 + i) * 195 + (col*3 + j)]
+                        tmp += data[img][(row*3 + i) * 195 + (col*3 + j)]
                 img_compress[img][row * 65 + col] = tmp // 9
 
     return img_compress
@@ -53,12 +53,15 @@ def resize_img(data):
 #     return (data - mean) / std
 
 def PCA(data):
-    mean = np.mean(data, axis = 0)
-    data_center = data - mean
-
-    covariance = data_center @ data_center.T / data_center.shape[0]
+    covariance = np.cov(data.T)
     eigenvalue, eigenvector = np.linalg.eigh(covariance)
-    eigenvector = data_center.T @ eigenvector
+    
+    # mean = np.mean(data, axis = 0)
+    # data_center = data - mean
+
+    # covariance = data_center @ data_center.T / data_center.shape[0]
+    # eigenvalue, eigenvector = np.linalg.eigh(covariance)
+    # eigenvector = data_center.T @ eigenvector
     
     index = np.argsort(-eigenvalue)
     eigenvector = eigenvector[:, index]
@@ -95,10 +98,10 @@ def LDA(data, label):
 
     return W
 
-def print_eigen_fisher_face(W, face, scale):
+def print_eigen_fisher_face(W, face):
     fig = plt.figure(figsize=(5, 5))
     for i in range(25):
-        img = W[:, i].reshape(231 // scale, 195 // scale)
+        img = W[:, i].reshape(77, 65)
         ax = fig.add_subplot(5, 5, i+1)
         ax.axis('off')
         ax.imshow(img, cmap='gray')
@@ -107,22 +110,22 @@ def print_eigen_fisher_face(W, face, scale):
         
     return
 
-def reconstruct_face(W, data, scale):
+def reconstruct_face(W, data, face):
     id = np.random.choice(135, 10, replace=False)
     fig = plt.figure(figsize=(8, 2))
     for i in range(10):
-        img = data[id[i]].reshape(231 // scale, 195 // scale)
+        img = data[id[i]].reshape(77, 65)
         ax = fig.add_subplot(2, 10, i + 1)
         ax.axis('off')
         ax.imshow(img, cmap='gray')
 
         x = img.reshape(1, -1)
         reconstruct_img = x @ W @ W.T
-        reconstruct_img = reconstruct_img.reshape(231 // scale, 195 // scale)
+        reconstruct_img = reconstruct_img.reshape(77, 65)
         ax = fig.add_subplot(2, 10, i + 11)
         ax.axis('off')
         ax.imshow(reconstruct_img, cmap='gray')
-    fig.savefig(f'./output/reconstruct.jpg')
+    fig.savefig(f'./output/reconstruct_{face}.jpg')
     plt.show()
 
     return
@@ -153,15 +156,16 @@ mode = int(input('Please select a mode (1~4): '))
 train_img, train_filename, train_label = load_imgs(TRAINING_PATH)
 test_img, test_filename, test_label = load_imgs(TESTING_PATH)
 
+train_img_compress = resize_img(train_img) #77 * 65
+test_img_compress = resize_img(test_img)
+
 if mode == 1:
-    W = PCA(train_img)
-    print_eigen_fisher_face(W, 'eigenface', 1)
-    reconstruct_face(W, train_img, 1)
-    predict(train_img, train_label, test_img, test_label, W)
+    W = PCA(train_img_compress)
+    print_eigen_fisher_face(W, 'eigenface')
+    reconstruct_face(W, train_img_compress, 'eigenface')
+    predict(train_img_compress, train_label, test_img_compress, test_label, W)
 elif mode == 2:
-    train_img_compress = resize_img(train_img) #77 * 65
-    test_img_compress = resize_img(test_img)
     W = LDA(train_img_compress, train_label)
-    print_eigen_fisher_face(W, 'fisherface', 3)
-    reconstruct_face(W, train_img_compress, 3)
+    print_eigen_fisher_face(W, 'fisherface')
+    reconstruct_face(W, train_img_compress, 'fisherface')
     predict(train_img_compress, train_label, test_img_compress, test_label, W)
