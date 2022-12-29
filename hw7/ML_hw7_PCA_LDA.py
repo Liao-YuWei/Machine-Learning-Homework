@@ -77,6 +77,20 @@ def LDA(data, label):
     S_w = np.zeros((dimension, dimension))
     S_b = np.zeros((dimension, dimension))
     m = np.mean(data, axis = 0)
+
+    # scatter_mean = np.zeros((15, dimension))
+    # for i in range(135):
+    #     scatter_mean[label[i]-1, :] += data[i, :]
+    # scatter_mean = scatter_mean / 9
+
+    # for i in range(135):
+    #     within_diff = scatter_mean[label[i]-1, :] - data[i, :]
+    #     S_w += within_diff.T @ within_diff
+    
+    # for i in range(15):
+    #     between_diff = scatter_mean[i, :] - m
+    #     S_b += 9 * between_diff.T @ between_diff
+
     for subject in trange(1, 16):
         id = np.where(label == subject)
         scatter = data[id]
@@ -85,7 +99,12 @@ def LDA(data, label):
         S_w += within_diff.T @ within_diff
         between_diff = mj - m
         S_b += len(id) * between_diff.T @ between_diff
-    
+
+        # xi = data[subject * 9 : (subject + 1) * 9]
+        # mj = np.mean(xi, axis=0)
+        # S_w += (xi - mj).T @ (xi - mj)
+        # S_b += len(xi) * (mj - m).reshape(-1, 1) @ (mj - m).reshape(1, -1)
+
     S_w_S_b = np.linalg.pinv(S_w) @ S_b
     eigenvalue, eigenvector = np.linalg.eig(S_w_S_b)
 
@@ -97,6 +116,37 @@ def LDA(data, label):
         W[:, i] = W[:, i] / np.linalg.norm(W[:, i])
 
     return W
+
+def linear_kernel(u, v):
+    return u @ v.T
+
+def RBFkernel(u, v):
+    gamma = 1e-10
+    dist = np.sum(u ** 2, axis=1).reshape(-1, 1) + np.sum(v ** 2, axis=1) - 2 * u @ v.T
+
+    return np.exp(-gamma * dist)
+
+def kernelPCA(data, kernel_type):
+    one = np.ones((135, 135)) / 135
+
+    if kernel_type == 'rbf':
+        kernel = RBFkernel(data, data)
+    elif kernel_type == 'linear':
+        kernel = linear_kernel(data, data)
+    else:
+        print('False kernel type input!')
+    
+    #kernel = kernel - one @ kernel - kernel @ one + one @ kernel @ one
+    eigenvalue, eigenvector = np.linalg.eigh(kernel)
+    
+    index = np.argsort(-eigenvalue)
+    eigenvector = eigenvector[:, index]
+
+    W = eigenvector[:, :25]
+    for i in range(W.shape[1]):
+        W[:, i] = W[:, i] / np.linalg.norm(W[:, i])
+
+    return W, kernel
 
 def print_eigen_fisher_face(W, face):
     fig = plt.figure(figsize=(5, 5))
@@ -148,6 +198,33 @@ def predict(train_img, train_label, test_img, test_label, W):
     print(f'error rate: {error / 30 * 100}%')
     return
 
+def predict_kernel(train_img, train_label, test_img, test_label, W, train_kernel, kernel_type):
+    k = 5
+    error = 0
+
+    if kernel_type == 'rbf':
+        test_kernel = RBFkernel(test_img, train_img)
+    elif kernel_type == 'linear':
+        test_kernel = linear_kernel(test_img, train_img)
+    else:
+        print('False kernel type input!')
+
+    xW_train = train_kernel @ W
+    xW_test = test_kernel @ W
+
+    for test in range(30):
+        distance = np.zeros(135)
+        for train in range(135):
+            distance[train] = np.sum((xW_test[test] - xW_train[train]) ** 2)
+        neighbors = np.argsort(distance)[:k]
+        prediction = np.argmax(np.bincount(train_label[neighbors]))
+        if test_label[test] != prediction:
+            error += 1
+
+    print(f'error rate: {error / 30 * 100}%')
+    
+    return
+
 TRAINING_PATH = './Yale_Face_Database/Training'
 TESTING_PATH = './Yale_Face_Database/Testing'
 
@@ -159,13 +236,20 @@ test_img, test_filename, test_label = load_imgs(TESTING_PATH)
 train_img_compress = resize_img(train_img) #77 * 65
 test_img_compress = resize_img(test_img)
 
-if mode == 1:
+if mode == 1:   #PCA
     W = PCA(train_img_compress)
     print_eigen_fisher_face(W, 'eigenface')
     reconstruct_face(W, train_img_compress, 'eigenface')
     predict(train_img_compress, train_label, test_img_compress, test_label, W)
-elif mode == 2:
+elif mode == 2: #LDA
     W = LDA(train_img_compress, train_label)
     print_eigen_fisher_face(W, 'fisherface')
     reconstruct_face(W, train_img_compress, 'fisherface')
     predict(train_img_compress, train_label, test_img_compress, test_label, W)
+elif mode == 3: #kernel PCA
+    kernel_type = 'rbf'
+    mean = np.mean(train_img_compress, axis=0)
+    centered_train = train_img_compress - mean
+    centered_test = test_img_compress - mean
+    W, train_kernel = kernelPCA(centered_train, kernel_type)
+    predict_kernel(centered_train, train_label, centered_test, test_label, W, train_kernel, kernel_type)
