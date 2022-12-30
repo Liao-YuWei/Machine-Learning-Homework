@@ -46,22 +46,9 @@ def resize_img(data):
 
     return img_compress
 
-# def standardize(data):
-#     mean = np.mean(data, axis = 0)
-#     std = np.std(data, axis = 0)
-
-#     return (data - mean) / std
-
 def PCA(data):
     covariance = np.cov(data.T)
     eigenvalue, eigenvector = np.linalg.eigh(covariance)
-    
-    # mean = np.mean(data, axis = 0)
-    # data_center = data - mean
-
-    # covariance = data_center @ data_center.T / data_center.shape[0]
-    # eigenvalue, eigenvector = np.linalg.eigh(covariance)
-    # eigenvector = data_center.T @ eigenvector
     
     index = np.argsort(-eigenvalue)
     eigenvector = eigenvector[:, index]
@@ -98,20 +85,15 @@ def LDA(data, label):
         within_diff = scatter - mj
         S_w += within_diff.T @ within_diff
         between_diff = mj - m
-        S_b += len(id) * between_diff.T @ between_diff
-
-        # xi = data[subject * 9 : (subject + 1) * 9]
-        # mj = np.mean(xi, axis=0)
-        # S_w += (xi - mj).T @ (xi - mj)
-        # S_b += len(xi) * (mj - m).reshape(-1, 1) @ (mj - m).reshape(1, -1)
+        S_b += 9 * between_diff.T @ between_diff
 
     S_w_S_b = np.linalg.pinv(S_w) @ S_b
-    eigenvalue, eigenvector = np.linalg.eig(S_w_S_b)
+    eigenvalue, eigenvector = np.linalg.eigh(S_w_S_b)
 
     index = np.argsort(-eigenvalue)
     eigenvector = eigenvector[:, index]
 
-    W = eigenvector[:, :25].real
+    W = eigenvector[:, :25]
     for i in range(W.shape[1]):
         W[:, i] = W[:, i] / np.linalg.norm(W[:, i])
 
@@ -159,10 +141,10 @@ def kernelLDA(data, kernel_type):
     S_b = kernel @ Z @ kernel
     
     S_w_S_b = np.linalg.pinv(S_w) @ S_b
-    eigenvalue, eigenvector = np.linalg.eig(S_w_S_b)
+    eigenvalue, eigenvector = np.linalg.eigh(S_w_S_b)
     
     index = np.argsort(-eigenvalue)
-    eigenvector = eigenvector[:, index].real
+    eigenvector = eigenvector[:, index]
 
     W = eigenvector[:, :25]
     for i in range(W.shape[1]):
