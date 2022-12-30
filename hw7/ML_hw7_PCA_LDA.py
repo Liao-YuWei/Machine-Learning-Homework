@@ -159,7 +159,7 @@ def print_eigen_fisher_face(W, face):
         ax = fig.add_subplot(5, 5, i+1)
         ax.axis('off')
         ax.imshow(img, cmap='gray')
-    fig.savefig(f'./output/{face}.jpg')
+    fig.savefig(f'./output/eigen_fisher_faces/{face}.jpg')
     plt.show()
         
     return
@@ -179,7 +179,7 @@ def reconstruct_face(W, data, face):
         ax = fig.add_subplot(2, 10, i + 11)
         ax.axis('off')
         ax.imshow(reconstruct_img, cmap='gray')
-    fig.savefig(f'./output/reconstruct_{face}.jpg')
+    fig.savefig(f'./output/eigen_fisher_faces/reconstruct_{face}.jpg')
     plt.show()
 
     return
