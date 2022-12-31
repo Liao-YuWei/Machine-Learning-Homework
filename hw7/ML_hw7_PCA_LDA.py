@@ -65,19 +65,6 @@ def LDA(data, label):
     S_b = np.zeros((dimension, dimension))
     m = np.mean(data, axis = 0)
 
-    # scatter_mean = np.zeros((15, dimension))
-    # for i in range(135):
-    #     scatter_mean[label[i]-1, :] += data[i, :]
-    # scatter_mean = scatter_mean / 9
-
-    # for i in range(135):
-    #     within_diff = scatter_mean[label[i]-1, :] - data[i, :]
-    #     S_w += within_diff.T @ within_diff
-    
-    # for i in range(15):
-    #     between_diff = scatter_mean[i, :] - m
-    #     S_b += 9 * between_diff.T @ between_diff
-
     for subject in trange(1, 16):
         id = np.where(label == subject)
         scatter = data[id]
