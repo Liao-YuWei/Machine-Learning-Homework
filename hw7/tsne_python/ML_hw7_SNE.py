@@ -14,6 +14,9 @@
 
 import numpy as np
 import pylab
+from PIL import Image
+import glob
+import os
 
 
 def Hbeta(D=np.array([]), beta=1.0):
@@ -104,7 +107,7 @@ def pca(X=np.array([]), no_dims=50):
     return Y
 
 
-def sne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
+def sne(X=np.array([]), labels=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0, mode=1):
     """
         Runs t-SNE on the dataset in the NxD array X to reduce its
         dimensionality to no_dims dimensions. The syntaxis of the function is
@@ -139,21 +142,36 @@ def sne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
     P = P * 4.									# early exaggeration
     P = np.maximum(P, 1e-12)
 
+    pylab.figure()
+    pylab.scatter(Y[:, 0], Y[:, 1], 20, labels)
+    if mode == 1:
+        pylab.savefig(f'../output/SNE/t_SNE/perplexity{int(perplexity)}/iteration0000.png')
+    else:
+        pylab.savefig(f'../output/SNE/symmetric/perplexity{int(perplexity)}/iteration0000.png')
+    pylab.cla()
+
     # Run iterations
     for iter in range(max_iter):
 
         # Compute pairwise affinities
         sum_Y = np.sum(np.square(Y), 1)
         num = -2. * np.dot(Y, Y.T)
-        num = 1. / (1. + np.add(np.add(num, sum_Y).T, sum_Y))
+        if mode == 1:
+            num = 1. / (1. + np.add(np.add(num, sum_Y).T, sum_Y))
+        else:
+            num = np.exp(-np.add(np.add(num, sum_Y).T, sum_Y))
         num[range(n), range(n)] = 0.
         Q = num / np.sum(num)
         Q = np.maximum(Q, 1e-12)
 
         # Compute gradient
         PQ = P - Q
-        for i in range(n):
-            dY[i, :] = np.sum(np.tile(PQ[:, i] * num[:, i], (no_dims, 1)).T * (Y[i, :] - Y), 0)
+        if mode == 1:
+            for i in range(n):
+                dY[i, :] = np.sum(np.tile(PQ[:, i] * num[:, i], (no_dims, 1)).T * (Y[i, :] - Y), 0)
+        else:
+            for i in range(n):
+                dY[i, :] = np.sum(np.tile(PQ[:, i], (no_dims, 1)).T * (Y[i, :] - Y), 0)
 
         # Perform the update
         if iter < 20:
@@ -171,14 +189,52 @@ def sne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
         if (iter + 1) % 10 == 0:
             C = np.sum(P * np.log(P / Q))
             print("Iteration %d: error is %f" % (iter + 1, C))
+        
+        if (iter + 1) % 40 == 0:
+            pylab.scatter(Y[:, 0], Y[:, 1], 20, labels)
+            if mode == 1:
+                pylab.savefig(f'../output/SNE/t_SNE/perplexity{int(perplexity)}/iteration{iter+1:04d}.png')
+            else:
+                pylab.savefig(f'../output/SNE/symmetric/perplexity{int(perplexity)}/iteration{iter+1:04d}.png')
+            pylab.cla()
 
         # Stop lying about P-values
         if iter == 100:
             P = P / 4.
 
-    # Return solution
-    return Y
+    if mode == 1:
+        mode = 't_SNE'
+    else:
+        mode = 'symmetric'
+    png_to_gif(mode, perplexity)
+    plot_similarity(P, Q, mode, perplexity)
+    return
 
+def png_to_gif(mode, perplexity):
+    frames = []
+    imgs = glob.glob((os.path.join(f'../output/SNE/{mode}/perplexity{int(perplexity)}', "*.png")))
+    for i in imgs:
+        new_frame = Image.open(i)
+        frames.append(new_frame)
+        
+    # Save into a GIF file that loops forever
+    frames[0].save(f'../output/SNE/{mode}/perplexity{int(perplexity)}\{mode}_{int(perplexity)}.gif',
+                format='GIF',
+                append_images=frames[1:],
+                save_all=True,
+                duration=200, loop=0)
+    return
+
+
+def plot_similarity(P, Q, mode, perplexity):  
+    pylab.hist(P.flatten(),bins = 30,log = True)
+    pylab.savefig(f'../output/SNE/{mode}/perplexity{int(perplexity)}/high_D.png')
+    pylab.cla()
+    pylab.hist(Q.flatten(),bins = 30,log = True)
+    pylab.savefig(f'../output/SNE/{mode}/perplexity{int(perplexity)}/low_D.png')
+    return
+
+PERPLEXITY = [5, 20, 35, 50, 65]
 
 if __name__ == "__main__":
     mode = int(input('Enter 1 for t-SNE, 2 for symmetric SNE: '))
@@ -187,12 +243,13 @@ if __name__ == "__main__":
     X = np.loadtxt("mnist2500_X.txt")
     labels = np.loadtxt("mnist2500_labels.txt")
 
-    if mode == 1:
-        Y = sne(X, 2, 50, 20.0)
-    elif mode == 2:
-        Y = sne(X, 2, 50, 20.0)
+    if mode == 1:   #t-SNE
+        for perplexity in PERPLEXITY:
+            print(f'Running t-SNE with perlexity {perplexity}.')
+            sne(X, labels, 2, 50, perplexity, mode)
+    elif mode == 2: #symmetric SNE
+        for perplexity in PERPLEXITY:
+            print(f'Running symmetric SNE with perlexity {perplexity}.')
+            sne(X, labels, 2, 50, perplexity, mode)
     else:
         print('Wrong input of mode!')
-        
-    pylab.scatter(Y[:, 0], Y[:, 1], 20, labels)
-    pylab.show()
